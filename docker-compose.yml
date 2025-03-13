@@ -1,0 +1,47 @@
+services:
+  # FastAPI (server) service
+  server:
+    container_name: fastapi_server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    command: >
+      poetry run uvicorn main:app
+      --host 0.0.0.0
+      --port 8000
+    environment:
+      POETRY_VIRTUALENVS_CREATE: "false"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  # Vite app service
+  vite_app:
+    container_name: vite_app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+      - postgres
+
+  # PostgreSQL service
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # NOTE: If your data was initialized with Postgres 13, either remove the volume below
+    # or change the image to postgres:13
+
+volumes:
+  postgres_data:
