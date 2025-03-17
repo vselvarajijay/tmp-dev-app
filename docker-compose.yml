@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # FastAPI (server) service
   server:
@@ -6,15 +8,16 @@ services:
       context: ./server
       dockerfile: Dockerfile
     command: >
-      poetry run uvicorn main:app
-      --host 0.0.0.0
-      --port 8000
+      sh -c "poetry run alembic upgrade head &&
+             poetry run uvicorn main:app --host 0.0.0.0 --port 8000"
     environment:
+      DATABASE_URL: "postgresql://vijayselvaraj:password@postgres:5432/testdb"
       POETRY_VIRTUALENVS_CREATE: "false"
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy  # Ensures Postgres is ready before running migrations
 
   # Vite app service
   vite_app:
@@ -33,15 +36,17 @@ services:
     container_name: postgres
     image: postgres:15
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: vijayselvaraj
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
+      POSTGRES_DB: testdb
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # NOTE: If your data was initialized with Postgres 13, either remove the volume below
-    # or change the image to postgres:13
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "vijayselvaraj", "-d", "testdb"]
+      interval: 10s
+      retries: 5
 
 volumes:
   postgres_data:
