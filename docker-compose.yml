@@ -1,47 +1,66 @@
+version: '3.8'
+
 services:
-  # FastAPI (server) service
-  server:
-    container_name: fastapi_server
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    command: >
-      poetry run uvicorn main:app
-      --host 0.0.0.0
-      --port 8000
-    environment:
-      POETRY_VIRTUALENVS_CREATE: "false"
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-
-  # Vite app service
-  vite_app:
-    container_name: vite_app
-    build:
-      context: ./app
-      dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
-    depends_on:
-      - server
-      - postgres
-
-  # PostgreSQL service
+  # PostgreSQL Database
   postgres:
-    container_name: postgres
     image: postgres:15
+    container_name: app_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
+      - POSTGRES_USER=vijayselvaraj
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=vijayselvaraj
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # NOTE: If your data was initialized with Postgres 13, either remove the volume below
-    # or change the image to postgres:13
+      - ./postgres/init:/docker-entrypoint-initdb.d  # For initialization scripts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vijayselvaraj"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped  # Automatically restart the container
+    networks:
+      - app-network
+      
+  # FastAPI Server
+  server:
+    build: ./server
+    container_name: fastapi_server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://vijayselvaraj:password@postgres:5432/vijayselvaraj
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+    entrypoint: ["/bin/bash", "-c", "chmod +x /app/start.sh && /app/start.sh"]
+    restart: unless-stopped  # Automatically restart the container
+    networks:
+      - app-network
+      
+  # Frontend App
+  app:
+    build: ./app
+    container_name: frontend_app
+    ports:
+      - "5173:5173"  # Vite's default port
+    volumes:
+      - ./app:/app
+      - /app/node_modules
+    depends_on:
+      - server
+    restart: unless-stopped  # Automatically restart the container
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
+    name: app_postgres_data  # Named volume for easier identification
+    driver: local

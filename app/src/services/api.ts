@@ -21,9 +21,10 @@ async function fetchApi<T>(
       },
     });
 
+    debugger;
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return { error: errorData.message || `Error: ${response.status}` };
+      return { error: errorData.detail || `Error: ${response.status}` };
     }
 
     const data = await response.json();

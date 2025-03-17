@@ -9,6 +9,7 @@ interface TeamMemberContextType {
   addTeamMember: (member: Omit<TeamMember, 'id'>) => Promise<boolean>;
   updateTeamMember: (member: TeamMember) => Promise<boolean>;
   deleteTeamMember: (id: number) => Promise<boolean>;
+  clearError: () => void;
 }
 
 const TeamMemberContext = createContext<TeamMemberContextType | undefined>(undefined);
@@ -22,10 +23,30 @@ export const TeamMemberProvider: React.FC<{ children: ReactNode }> = ({ children
   useEffect(() => {
     const fetchTeamMembers = async () => {
       setLoading(true);
+      setError(null); // Clear any previous errors
       const response = await teamMemberApi.getAllTeamMembers();
       
+
+      debugger;
       if (response.error) {
-        setError(response.error);
+        let errorMessage;
+        if (typeof response.error === 'string') {
+          errorMessage = response.error;
+        } else if (response.error.detail) {
+          errorMessage = response.error.detail;
+        } else if (response.error.message) {
+          errorMessage = response.error.message;
+        } else if (response.error.data?.detail) {
+          errorMessage = response.error.data.detail;
+        } else if (response.error.data?.message) {
+          errorMessage = response.error.data.message;
+        } else {
+          errorMessage = 'An unknown error occurred';
+        }
+        
+        // Remove redundant "Error:" prefix if it exists
+        errorMessage = errorMessage.replace(/^Error:\s+/i, '');
+        setError(errorMessage);
       } else if (response.data) {
         setTeamMembers(response.data);
       }
@@ -36,11 +57,36 @@ export const TeamMemberProvider: React.FC<{ children: ReactNode }> = ({ children
     fetchTeamMembers();
   }, []);
 
+  const clearError = () => {
+    setError(null);
+  };
+
   const addTeamMember = async (member: Omit<TeamMember, 'id'>): Promise<boolean> => {
+    setError(null); // Clear any previous errors
     const response = await teamMemberApi.createTeamMember(member);
     
-    if (response.error) {
-      setError(response.error);
+          if (response.error) {
+      // Handle different error formats and strip redundant "Error:" prefixes
+      let errorMessage = '';
+      if (typeof response.error === 'string') {
+        errorMessage = response.error;
+      } else if (response.error.detail) {
+        // Handle the specific case with a detail field
+        errorMessage = response.error.detail;
+      } else if (response.error.message) {
+        errorMessage = response.error.message;
+      } else if (response.error.data?.message) {
+        errorMessage = response.error.data.message;
+      } else if (response.error.data?.detail) {
+        // Also check for detail in the data object
+        errorMessage = response.error.data.detail;
+      } else {
+        errorMessage = 'Failed to add team member';
+      }
+      
+      // Remove redundant "Error:" prefix if it exists
+      errorMessage = errorMessage.replace(/^Error:\s+/i, '');
+      setError(errorMessage);
       return false;
     }
     
@@ -53,10 +99,31 @@ export const TeamMemberProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const updateTeamMember = async (updated: TeamMember): Promise<boolean> => {
+    setError(null); // Clear any previous errors
     const response = await teamMemberApi.updateTeamMember(updated);
     
-    if (response.error) {
-      setError(response.error);
+          if (response.error) {
+      // Handle different error formats and strip redundant "Error:" prefixes
+      let errorMessage = '';
+      if (typeof response.error === 'string') {
+        errorMessage = response.error;
+      } else if (response.error.detail) {
+        // Handle the specific case with a detail field
+        errorMessage = response.error.detail;
+      } else if (response.error.message) {
+        errorMessage = response.error.message;
+      } else if (response.error.data?.message) {
+        errorMessage = response.error.data.message;
+      } else if (response.error.data?.detail) {
+        // Also check for detail in the data object
+        errorMessage = response.error.data.detail;
+      } else {
+        errorMessage = 'Failed to update team member';
+      }
+      
+      // Remove redundant "Error:" prefix if it exists
+      errorMessage = errorMessage.replace(/^Error:\s+/i, '');
+      setError(errorMessage);
       return false;
     }
     
@@ -69,10 +136,31 @@ export const TeamMemberProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const deleteTeamMember = async (id: number): Promise<boolean> => {
+    setError(null); // Clear any previous errors
     const response = await teamMemberApi.deleteTeamMember(id);
     
-    if (response.error) {
-      setError(response.error);
+          if (response.error) {
+      // Handle different error formats and strip redundant "Error:" prefixes
+      let errorMessage = '';
+      if (typeof response.error === 'string') {
+        errorMessage = response.error;
+      } else if (response.error.detail) {
+        // Handle the specific case with a detail field
+        errorMessage = response.error.detail;
+      } else if (response.error.message) {
+        errorMessage = response.error.message;
+      } else if (response.error.data?.message) {
+        errorMessage = response.error.data.message;
+      } else if (response.error.data?.detail) {
+        // Also check for detail in the data object
+        errorMessage = response.error.data.detail;
+      } else {
+        errorMessage = 'Failed to delete team member';
+      }
+      
+      // Remove redundant "Error:" prefix if it exists
+      errorMessage = errorMessage.replace(/^Error:\s+/i, '');
+      setError(errorMessage);
       return false;
     }
     
@@ -88,7 +176,8 @@ export const TeamMemberProvider: React.FC<{ children: ReactNode }> = ({ children
         error, 
         addTeamMember, 
         updateTeamMember, 
-        deleteTeamMember 
+        deleteTeamMember,
+        clearError
       }}
     >
       {children}

@@ -7,6 +7,12 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 # Create app directory
 WORKDIR /app
 
+# Install PostgreSQL client for health check
+RUN apt-get update && \
+    apt-get install -y postgresql-client && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy dependency files first for caching benefits
 COPY pyproject.toml poetry.lock /app/
 
@@ -20,5 +26,5 @@ COPY . /app
 # Expose FastAPI port
 EXPOSE 8000
 
-# Run the FastAPI server
-CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the FastAPI server with Alembic migrations
+CMD ["./start.sh"]
