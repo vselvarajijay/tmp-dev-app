@@ -42,7 +42,14 @@ const AddPage: React.FC = () => {
     <Layout>
       <div className={containerStyles}>
         <h2 className={`${pageHeadingStyles} mb-4`}>Add Team Member</h2>
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+        
+        {/* Error display component */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className={`max-w-md ${cardContainerStyles.replace('cursor-pointer', '')}`}>
           <div className="mb-4">
             <label htmlFor="first_name" className="block text-gray-700 mb-1">
